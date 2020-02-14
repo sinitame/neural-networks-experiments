@@ -2,9 +2,9 @@
 
 One of the main assumption made when training learning systems is to supposed that the distribution of the inputs stays the same throughout training. For linear models, which simply maps input data to some appropriate outputs, this condition is always satisfied but it is not the case when dealing with Neural Networks which are composed of several layers which are stack on top of each other. 
 
-In such architecture, each layers inputs are affected by the parameters of all preceding layers (small changes to the network parameters amplify as the network becomes deeper). As a consequence, a small change made during the backpropagation step within a layer can produce a huge variation of the inputs of another layer and at the end change their distribution. During the training, each layers need to continuously adapt to the new distribution obtained from the previous one and this slows down the convergence.
+In such architecture, each layers inputs are affected by the parameters of all preceding layers (small changes to the network parameters amplify as the network becomes deeper). As a consequence, a small change made during the backpropagation step within a layer can produce a huge variation of the inputs of another layer and at the end change feature maps distribution. During the training, each layers need to continuously adapt to the new distribution obtained from the previous one and this slows down the convergence.
 
-Batch normalization [1] overcome this issue and make the training more efficient at the same time by reducing covarience shift within internal nodes during the course of training and with the advantages of working with batches.
+Batch normalization [1] overcome this issue and make the training more efficient at the same time by reducing covarience shift within internal layers (change in the distribution of network activations due to the change in network parameters during training) during the course of training and with the advantages of working with batches.
 
 ## 1. Reduce internal covariance shift via mini-batch statistics
 
@@ -23,7 +23,7 @@ $$
 
 However, simply normalizing each input of a layer may change what the layer can represent. For instance, normalizing the inputs of a sigmoid would constrain them to the linear regime of the nonlinearity. Such a behavior is not desirable for the network as it will reduce his representative power (it would become equivalent of a single single layer network).
 
-(simoid image avec highlight sur la partie non linéaire )
+![](imgs/sigmoid-linear-region.png)
 
 To address this, batch normalization also ensure that the transformation inserted in the network can represent the identity transform (the model still learn some parameters at each layers that adjust the activations recieved from the previous layer without linear mapping) . This is accomplished by introducing a pair of learnable parameters gamma_k and beta_k  which scale and shift the nomalized value according to what the model learns.
 
@@ -39,33 +39,150 @@ $$
 
 ### During training
 
+#### Fully connected layers
+
 ```python
-def training_batch_norm(X, gamma, beta, eps = 1e-5):
-    if len(X.shape) not in (2, 4):
-        raise ValueError("only support dense or 2dconv")
-    
-    # dense layer
-    elif len(X.shape) == 2:
-        mean = torch.mean(X, axis=0)
-        variance = torch.mean((X-mean)**2, axis=0)
-        X_hat = (X-mean) * 1.0 /torch.sqrt(variance + eps)
-        out = gamma * X_hat + beta
-        
-    elif len(X.shape) == 4:
-        N, C, H, W = X.shape
-        mean = torch.mean(X, axis = (0, 2, 3))
-        variance = torch.mean((X - mean.reshape((1, C, 1, 1))) ** 2, axis=(0, 2, 3))
-        X_hat = (X - mean.reshape((1, C, 1, 1))) * 1.0 / torch.sqrt(variance.reshape((1, C, 1, 1)) + eps)
-        out = gamma.reshape((1, C, 1, 1)) * X_hat + beta.reshape((1, C, 1, 1))
-        
-    return out
+mean = torch.mean(X, axis=0)
+variance = torch.mean((X-mean)**2, axis=0)
+X_hat = (X-mean) * 1.0 /torch.sqrt(variance + eps)
+out = gamma * X_hat + beta
+```
+
+#### Convolutional layers
+
+```python
+N, C, H, W = X.shape
+mean = torch.mean(X, axis = (0, 2, 3))
+variance = torch.mean((X - mean.reshape((1, C, 1, 1))) ** 2, axis=(0, 2, 3))
+X_hat = (X - mean.reshape((1, C, 1, 1))) * 1.0 / torch.sqrt(variance.reshape((1, C, 1, 1)) + eps)
+out = gamma.reshape((1, C, 1, 1)) * X_hat + beta.reshape((1, C, 1, 1))
 ```
 
 
 
 ### During inference
 
+(Adding code to show how to compute moving average)
+
+
+
+### Final module
+
+```python
+class CustomBatchNorm(nn.Module):
+
+    def __init__(self, in_size, momentum=0.9, eps = 1e-5):
+        super(CustomBatchNorm, self).__init__()
+        
+        self.momentum = momentum
+        self.insize = in_size
+        self.eps = eps
+        
+        U = uniform.Uniform(torch.tensor([0.0]), torch.tensor([1.0]))
+        self.gamma = nn.Parameter(U.sample(torch.Size([self.insize])).view(self.insize))
+        self.beta = nn.Parameter(torch.zeros(self.insize))
+            
+        self.register_buffer('running_mean', torch.zeros(self.insize))
+        self.register_buffer('running_var', torch.ones(self.insize))
+        
+        self.running_mean.zero_()
+        self.running_var.fill_(1)
+
+    def forward(self, input):
+        
+        X = input
+
+        if len(X.shape) not in (2, 4):
+            raise ValueError("only support dense or 2dconv")
+        
+        # dense layer
+        elif len(X.shape) == 2:
+            if self.training:
+                mean = torch.mean(X, axis=0)
+                variance = torch.mean((X-mean)**2, axis=0)
+                
+                self.running_mean = (self.momentum * self.running_mean) + (1.0-self.momentum) * mean
+                self.running_var = (self.momentum * self.running_var) + (1.0-self.momentum) * (input.shape[0]/(input.shape[0]-1)*variance)
+            
+            else:
+                mean = self.running_mean
+                variance = self.running_var
+                
+            X_hat = (X-mean) * 1.0 /torch.sqrt(variance + self.eps)
+            out = self.gamma * X_hat + self.beta
+  
+				# convolutional layer
+        elif len(X.shape) == 4:
+            if self.training:
+                N, C, H, W = X.shape
+                mean = torch.mean(X, axis = (0, 2, 3))
+                variance = torch.mean((X - mean.reshape((1, C, 1, 1))) ** 2, axis=(0, 2, 3))
+                
+                self.running_mean = (self.momentum * self.running_mean) + (1.0-self.momentum) * mean
+                self.running_var = (self.momentum * self.running_var) + (1.0-self.momentum) * (input.shape[0]/(input.shape[0]-1)*variance)
+            else:
+                mean = self.running_mean
+                var = self.running_var
+                
+            X_hat = (X - mean.reshape((1, C, 1, 1))) * 1.0 / torch.sqrt(variance.reshape((1, C, 1, 1)) + self.eps)
+            out = self.gamma.reshape((1, C, 1, 1)) * X_hat + self.beta.reshape((1, C, 1, 1))
+        
+        return out
+```
+
+
+
+
+
 ## 3. Experiments on MNIST
+
+### Network architecture without Batch Norm
+
+```python
+class SimpleNet(nn.Module):
+    def __init__(self):
+        super(SimpleNet, self).__init__()
+        self.classifier = nn.Sequential(
+            nn.Linear(28 * 28, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 10)
+        )
+        
+    def forward(self, x):
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+        return x
+```
+
+
+
+### Network architecture with Batch Norm
+
+```python
+class SimpleNetBN(nn.Module):
+    def __init__(self):
+        super(SimpleNetBN, self).__init__()
+        self.classifier = nn.Sequential(
+            nn.Linear(28 * 28, 64),
+            CustomBatchNorm(64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            CustomBatchNorm(128),
+            nn.ReLU(),
+            nn.Linear(128, 10)
+        )
+        
+    def forward(self, x):
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+        return x
+```
+
+
+
+### Results
 
 ![](imgs/training-loss.png)
 
