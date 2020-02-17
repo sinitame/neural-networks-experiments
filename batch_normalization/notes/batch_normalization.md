@@ -6,6 +6,12 @@ In such architecture, each layers inputs are affected by the parameters of all p
 
 Batch normalization [1] overcome this issue and make the training more efficient at the same time by reducing covarience shift within internal layers (change in the distribution of network activations due to the change in network parameters during training) during the course of training and with the advantages of working with batches.
 
+### This article will cover the following
+
+- How batch normalization can reduce internal covariance shift and how this can improve the training of a Neural Network.
+- How to implement a batch normalization layer in PyTorch.
+- Some simple experiments showing the advantages of using batch normalization.
+
 ## 1. Reduce internal covariance shift via mini-batch statistics
 
 One way reduce remove the ill effects of the internal covariate shift within a Neural Network is to normalize layers inputs. This operation not only enforce inputs to have the same distribution but also whiten each of them. This method is motivated by some studies [3,4] showing that the network training converges faster if its inputs are whitened and as a consequence, enforcing the whithening of the inputs of each layers is a desirable property for the network.
@@ -62,9 +68,18 @@ out = gamma.reshape((1, C, 1, 1)) * X_hat + beta.reshape((1, C, 1, 1))
 
 ### During inference
 
-(Adding code to show how to compute moving average)
+During inference we want the output of our network to depend only on the input and so we cannot consider the statistics made on the batches that we considered previously (the are related to the batch so they changes depending on the data. In order to ensure that we have a fixed expectation and variance, we need to compute these values using the all dataset instead of considering only batches. However, computing these statistics for all the dataset is quite expensive in terme of time and computation.
 
+The approached proposed in [1] is to use moving statistics that we compute during trainaing. We adjust the importance of the expectation computed on the current batch with a parameter beta (momentum):
+$$
+\text{E}[x]_{\mathcal{B} \in \mathcal{X}} = (1 - \beta) . \text{E}[x]_{\mathcal{B}_i} + \beta .\text{E}[x]_{\mathcal{B}_{i-1, i-2, ...}}
+$$
 
+$$
+\text{V}[x]_{\mathcal{B} \in \mathcal{X}} = (1 - \beta) . \text{V}[x]_{\mathcal{B}_i} + \beta .\text{V}[x]_{\mathcal{B}_{i-1, i-2, ...}}
+$$
+
+This movin average is stored on a global variable that is updated during the training phase.
 
 ### Final module
 
@@ -132,9 +147,11 @@ class CustomBatchNorm(nn.Module):
 
 
 
-
-
 ## 3. Experiments on MNIST
+
+In order to see the effect of batch normalization on training, we can compare the convergence rate between a simple Neural Network without batch normalization and an other one with batch normalization.
+
+In order to keep things simple, we train these networks on the MNIST [3] dataset.
 
 ### Network architecture without Batch Norm
 
@@ -184,20 +201,28 @@ class SimpleNetBN(nn.Module):
 
 ### Results
 
-![](imgs/training-loss.png)
+The following figure shows the distribution of activations after the first layer of our `SimpleNet`. We can see that the activation distribution with batch norm is still gaussian (with a small scale and shift learned during training) even after 20 epochs of training.
 
 ![](imgs/activation-distribution.png)
+
+We can also see great improvements in term of convergence rates. The green curve (with batch normalization) shows that we can converge much fater to an optimal solution with normalization than without batch normalization.
+
+![](imgs/training-loss.png)
+
+
 
 ## Conclusion
 
 ### Advantages of using batch normalisation for training
 
 - The gradient of the loss over a mini-batch is an estimate of the gradient over the training set, whose quality improves as the batch size increases.
-- The computation over a batch size can be much more efficient than $m$ computations for individual examples due to the parallelism afforded by GPUs.
-- ...
+- The computation over a batch size can be much more efficient than m computations for individual examples due to the parallelism afforded by GPUs.
+- Using batch normalization at each layer to reduce internal covariate shift greatly improves the learning efficiency of the networks.
 
 ## References
 
 [1] Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network training by reducing internal covariate shift." *arXiv preprint arXiv:1502.03167* (2015).
 
 [2] Shimodaira, Hidetoshi. "Improving predictive inference under covariate shift by weighting the log-likelihood function." *Journal of statistical planning and inference* 90.2 (2000): 227-244.
+
+[3] MNIST dataset, http://yann.lecun.com/exdb/mnist/
