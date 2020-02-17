@@ -1,10 +1,10 @@
-# Batch normalisation
+# Batch normalization
 
-One of the main assumption made when training learning systems is to supposed that the distribution of the inputs stays the same throughout training. For linear models, which simply maps input data to some appropriate outputs, this condition is always satisfied but it is not the case when dealing with Neural Networks which are composed of several layers which are stack on top of each other. 
+One of the main assumptions made when training learning systems is to suppose that the distribution of the inputs stays the same throughout training. For linear models, which simply map input data to some appropriate outputs, this condition is always satisfied but it is not the case when dealing with Neural Networks which are composed of several layers stacked on top of each other. 
 
-In such architecture, each layers inputs are affected by the parameters of all preceding layers (small changes to the network parameters amplify as the network becomes deeper). As a consequence, a small change made during the backpropagation step within a layer can produce a huge variation of the inputs of another layer and at the end change feature maps distribution. During the training, each layers need to continuously adapt to the new distribution obtained from the previous one and this slows down the convergence.
+In such architecture, each layers inputs are affected by the parameters of all preceding layers (small changes to the network parameters amplify as the network becomes deeper). As a consequence, a small change made during the backpropagation step within a layer can produce a huge variation of the inputs of another layer and at the end change feature maps distribution. During the training, each layer needs to continuously adapt to the new distribution obtained from the previous one and this slows down the convergence.
 
-Batch normalization [1] overcome this issue and make the training more efficient at the same time by reducing covarience shift within internal layers (change in the distribution of network activations due to the change in network parameters during training) during the course of training and with the advantages of working with batches.
+Batch normalization [1] overcomes this issue and make the training more efficient at the same time by reducing covariance shift within internal layers (change in the distribution of network activations due to the change in network parameters during training) during the course of training and with the advantages of working with batches.
 
 ### This article will cover the following
 
@@ -14,11 +14,11 @@ Batch normalization [1] overcome this issue and make the training more efficient
 
 ## 1. Reduce internal covariance shift via mini-batch statistics
 
-One way reduce remove the ill effects of the internal covariate shift within a Neural Network is to normalize layers inputs. This operation not only enforce inputs to have the same distribution but also whiten each of them. This method is motivated by some studies [3,4] showing that the network training converges faster if its inputs are whitened and as a consequence, enforcing the whithening of the inputs of each layers is a desirable property for the network.
+One way to reduce remove the ill effects of the internal covariance shift within a Neural Network is to normalize layers inputs. This operation not only enforces inputs to have the same distribution but also whitens each of them. This method is motivated by some studies [3,4] showing that the network training converges faster if its inputs are whitened and as a consequence, enforcing the whithening of the inputs of each layers is a desirable property for the network.
 
-The full whitening of each layer’s inputs is costly and not everywhere differentiable. Batch normalization overcome these issue by considering two assumptions:
+However, the full whitening of each layer’s inputs is costly and not fully differentiable. Batch normalization overcomes this issue by considering two assumptions:
 
-- instead of whitening the features in layer inputs and outputs jointly, we will normalize each scalar feature independently, by making it have the mean of zero and the variance of 1.
+- instead of whitening the features in layer inputs and outputs jointly, we will normalize each scalar feature independently (by setting the mean of zero and the variance of 1).
 - Instead of using the entire dataset to normalize activations, we use mini-batches as *each mini-batch produces estimates of the mean and variance* of each activation.
 
 For a layer with d-dimentional inputs x = $(x^{(1)} ... x^{(d)})$ we obtain the normalization with the following formulae (with expectation and variance computed over a batch B): 
@@ -27,11 +27,11 @@ $$
 $$
 
 
-However, simply normalizing each input of a layer may change what the layer can represent. For instance, normalizing the inputs of a sigmoid would constrain them to the linear regime of the nonlinearity. Such a behavior is not desirable for the network as it will reduce his representative power (it would become equivalent of a single single layer network).
+However, simply normalizing each input of a layer may change what the layer can represent. For instance, normalizing the inputs of a sigmoid would constrain them to the linear regime of the nonlinearity. Such a behavior is not desirable for the network as it will reduce his representative power (it would become equivalent to a single single layer network).
 
 ![](imgs/sigmoid-linear-region.png)
 
-To address this, batch normalization also ensure that the transformation inserted in the network can represent the identity transform (the model still learn some parameters at each layers that adjust the activations recieved from the previous layer without linear mapping) . This is accomplished by introducing a pair of learnable parameters gamma_k and beta_k  which scale and shift the nomalized value according to what the model learns.
+To address this, batch normalization also ensures that the transformation inserted in the network can represent the identity transform (the model still learns some parameters at each layer that adjust the activations recieved from the previous layer without linear mapping) . This is accomplished by introducing a pair of learnable parameters gamma_k and beta_k  which scale and shift the nomalized value according to what the model learns.
 
 At the end, the resulting layers inputs (based on previous layer outputs x) are given by:
 $$
@@ -68,9 +68,9 @@ out = gamma.reshape((1, C, 1, 1)) * X_hat + beta.reshape((1, C, 1, 1))
 
 ### During inference
 
-During inference we want the output of our network to depend only on the input and so we cannot consider the statistics made on the batches that we considered previously (the are related to the batch so they changes depending on the data. In order to ensure that we have a fixed expectation and variance, we need to compute these values using the all dataset instead of considering only batches. However, computing these statistics for all the dataset is quite expensive in terme of time and computation.
+During inference we want the output of our network to depend only on the input and so we cannot consider the statistics made on the batches that we considered previously (they are related to the batch so they change depending on the data). In order to ensure that we have a fixed expectation and variance, we need to compute these values using the whole dataset instead of considering only batches. However, computing these statistics for all the dataset is quite expensive in terms of time and computation.
 
-The approached proposed in [1] is to use moving statistics that we compute during trainaing. We adjust the importance of the expectation computed on the current batch with a parameter beta (momentum):
+The approached proposed in [1] is to use moving statistics that we compute during training. We adjust the importance of the expectation computed on the current batch with a parameter beta (momentum):
 $$
 \text{E}[x]_{\mathcal{B} \in \mathcal{X}} = (1 - \beta) . \text{E}[x]_{\mathcal{B}_i} + \beta .\text{E}[x]_{\mathcal{B}_{i-1, i-2, ...}}
 $$
@@ -79,7 +79,7 @@ $$
 \text{V}[x]_{\mathcal{B} \in \mathcal{X}} = (1 - \beta) . \text{V}[x]_{\mathcal{B}_i} + \beta .\text{V}[x]_{\mathcal{B}_{i-1, i-2, ...}}
 $$
 
-This movin average is stored on a global variable that is updated during the training phase.
+This moving average is stored in a global variable that is updated during the training phase.
 
 ### Final module
 
@@ -205,7 +205,7 @@ The following figure shows the distribution of activations after the first layer
 
 ![](imgs/activation-distribution.png)
 
-We can also see great improvements in term of convergence rates. The green curve (with batch normalization) shows that we can converge much fater to an optimal solution with normalization than without batch normalization.
+We can also see great improvements in term of convergence rates. The green curve (with batch normalization) shows that we can converge much faster to an optimal solution with normalization than without batch normalization.
 
 ![](imgs/training-loss.png)
 
@@ -216,7 +216,7 @@ We can also see great improvements in term of convergence rates. The green curve
 ### Advantages of using batch normalisation for training
 
 - The gradient of the loss over a mini-batch is an estimate of the gradient over the training set, whose quality improves as the batch size increases.
-- The computation over a batch size can be much more efficient than m computations for individual examples due to the parallelism afforded by GPUs.
+- The computation over a batch size can be much more efficient than multiple computations for individual examples due to the parallelism afforded by GPUs.
 - Using batch normalization at each layer to reduce internal covariate shift greatly improves the learning efficiency of the networks.
 
 ## References
