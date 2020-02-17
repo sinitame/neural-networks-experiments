@@ -1,6 +1,6 @@
 # Batch normalization
 
-One of the main assumptions made when training learning systems is to suppos that the distribution of the inputs stays the same throughout training. For linear models, which simply map input data to some appropriate outputs, this condition is always satisfied but it is not the case when dealing with Neural Networks which are composed of several layers stacked on top of each other. 
+One of the main assumptions made when training learning systems is to suppose that the distribution of the inputs stays the same throughout training. For linear models, which simply map input data to some appropriate outputs, this condition is always satisfied but it is not the case when dealing with Neural Networks which are composed of several layers stacked on top of each other. 
 
 In such architecture, each layers inputs are affected by the parameters of all preceding layers (small changes to the network parameters amplify as the network becomes deeper). As a consequence, a small change made during the backpropagation step within a layer can produce a huge variation of the inputs of another layer and at the end change feature maps distribution. During the training, each layer needs to continuously adapt to the new distribution obtained from the previous one and this slows down the convergence.
 
