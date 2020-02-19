@@ -4,7 +4,7 @@ Generative models are a class of models for unsupervised learning that given a t
 
 Internally, the model is a function with parameters θ, and tweaking these parameters will tweak the generated distribution of images. The goal during training is then to find parameters θ that produce a distribution that closely matches the true data distribution (for example, by having a small KL divergence loss). 
 
-![](imgs/gen_models_diag_2.svg)
+![](imgs/gen_models_diag.png)
 
 ## Variational Auto Encoders (VAE)
 
