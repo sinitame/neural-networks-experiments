@@ -4,7 +4,7 @@ Generative models are a class of models for unsupervised learning that given a t
 
 Internally, the model is a function with parameters θ, and tweaking these parameters will tweak the generated distribution of images. The goal during training is then to find parameters θ that produce a distribution that closely matches the true data distribution (for example, by having a small KL divergence loss). 
 
-![](notes/imgs/gen_models_diag.png)
+![](notes/imgs/gen-models-diag.png)
 
 **It exists several approaches in the domain**
 
@@ -23,7 +23,7 @@ One of the key idea behind VAE is that instead of trying to construct a latent s
 - The encoder learns to generate a distribution depending on input samples X from which we can sample a latent variable that is highly likelly to generate X samples. In other words we learn a set of parameters θ1 that generate a distribution Q(X,θ1)  from which we can sample a latent variable z maximizing P(X|z).
 - The decoder part learns to generate an output which belongs to the real data distribution given a latent variable z given in input.In other words, we learn a set of parameters θ2 that generates a function f(z,θ2) that maps the latent distibution that we learned to the real data distribution of the dataset.
 
-![](imgs/vae-gaussian.png)
+![](notes/imgs/vae-gaussian.png)
 
 ### Applications
 
