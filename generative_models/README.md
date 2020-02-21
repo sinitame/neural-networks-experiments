@@ -25,6 +25,11 @@ One of the key idea behind VAE is that instead of trying to construct a latent s
 
 ![](notes/imgs/vae-gaussian.png)
 
+#### More details can be found here
+
+- [Variational Auto Encoders: From theory to practice](notes/variational_auto_encoders.md) (Article)
+- Variational Auto Encoders: Practice (Notebook)
+
 ### Applications
 
 
