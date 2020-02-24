@@ -122,6 +122,88 @@ We can know resume the final architecture of a VAE. As announced in the introduc
 
 ![](imgs/vae-detailed-architecture.png)
 
+
+
+## 4. Experiments with VAEs
+
+
+
+### Implementation of a VAE Network
+
+#### Encoder
+
+```python
+encoder = nn.Sequential(nn.Linear(28 * 28, 256),
+                        nn.ReLU(),
+                        nn.Linear(256, 128))
+```
+
+
+
+#### Decoder
+
+```python
+decoder = nn.Sequential(nn.Linear(128, 256),
+                        nn.ReLU(),
+                        nn.Linear(256, 28 * 28))
+```
+
+
+
+#### Global architecture
+
+```python
+class VAE(nn.Module):
+    def __init__(self, latent_dim):
+        super().__init__()
+        
+        self.encoder = nn.Sequential(nn.Linear(28 * 28, 256),
+                                     nn.ReLU(),
+                                     nn.Linear(256, 128))
+        
+        self.mu     = nn.Linear(128, latent_dim)
+        self.logvar = nn.Linear(128, latent_dim)
+        
+        self.latent_mapping = nn.Linear(latent_dim, 128)
+        
+        self.decoder = nn.Sequential(nn.Linear(128, 256),
+                                     nn.ReLU(),
+                                     nn.Linear(256, 28 * 28))
+        
+        
+    def encode(self, x):
+        x = x.view(x.size(0), -1)
+        encoder = self.encoder(x)
+        mu, logvar = self.mu(encoder), self.logvar(encoder)
+        return mu, logvar
+        
+    def sample_z(self, mu, logvar):
+        eps = torch.rand_like(mu)
+        return mu + eps * torch.exp(0.5 * logvar)
+    
+    def decode(self, z,x):
+        latent_z = self.latent_mapping(z)
+        out = self.decoder(latent_z)
+        reshaped_out = torch.sigmoid(out).view(x.shape[0],1, 28,28)
+        return reshaped_out
+        
+    def forward(self, x):
+        
+        mu, logvar = self.encode(x)
+        z = self.sample_z(mu, logvar)
+        output = self.decode(z,x)
+        
+        return output
+```
+
+
+
+
+
+### Continuity in the latent space
+
+![](imgs/vae-continuity.png)
+
 ## Conclusion
 
 
