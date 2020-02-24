@@ -28,9 +28,11 @@ One of the key idea behind VAE is that instead of trying to construct a latent s
 #### More details can be found here
 
 - [Variational Auto Encoders: From theory to practice](notes/variational_auto_encoders.md) (Article)
-- Variational Auto Encoders: Practice (Notebook)
+- [Variational Auto Encoders: Practice](notes/variational_auto_encoders.md) (Notebook)
 
 ### Applications
+
+- Data generation and augmentation
 
 
 
@@ -46,9 +48,27 @@ One of the key idea behind VAE is that instead of trying to construct a latent s
 
 ## Generative adverserial Netwoks (GAN)
 
-GAN aims at achieving an equilibrium between Generator and Discriminator
+As VAEs, generative adversarial networks are mapping a simple distribution (our latent space composed or random variables) into the data distribution that we try to model. This part of GANs is called the generator and it can be compared to the decoder part of VAEs.
+
+One of the key idea behind GANs is that instead comparing the generator distribution and the true distribution of data by looking directly at the samples used for training (as it is the case for VAEs), it learns how close are the two distributions using a discriminator. This discriminator learns how to differentiate the true distribution from the generated distribution, in other words real samples from fake samples. 
+
+![](notes/imgs/gan-detailed-architecture.png)
+
+During the training, we will try to minimise the error of the generator while maximising the error of the discriminator. The discriminator will have the most difficulty to predict the class when the two distributions will be equal in all points: in this case, for each point there are equal chances for it to be “true” or “generated” and then the discriminator can’t do better than being true in one case out of two in average.
+
+**More details can be found here:**
+
+- Generative Adverserial Networks: From theory to practice (Article)
+- Generative Adverserial Networks: Practice (Notebook)
 
 ### Applications
+
+- Data generation
+- Style transfert
+- Text-to-Image Translation
+- Super Resolution
+- 3D Object Generation
+- Photo Inpainting
 
 ### Related papers
 
