@@ -23,7 +23,7 @@ One of the key idea behind VAE is that instead of trying to construct a latent s
 - The encoder learns to generate a distribution depending on input samples X from which we can sample a latent variable that is highly likelly to generate X samples. In other words we learn a set of parameters θ1 that generate a distribution Q(X,θ1)  from which we can sample a latent variable z maximizing P(X|z).
 - The decoder part learns to generate an output which belongs to the real data distribution given a latent variable z given in input.In other words, we learn a set of parameters θ2 that generates a function f(z,θ2) that maps the latent distibution that we learned to the real data distribution of the dataset.
 
-![](imgs/vae-gaussian.png)
+![](variational_auto_encoders/notes/imgs/vae-gaussian.png)
 
 #### More details can be found here
 
@@ -50,7 +50,7 @@ As VAEs, generative adversarial networks are mapping a simple distribution (our 
 
 One of the key idea behind GANs is that instead comparing the generator distribution and the true distribution of data by looking directly at the samples used for training (as it is the case for VAEs), it learns how close are the two distributions using a discriminator. This discriminator learns how to differentiate the true distribution from the generated distribution, in other words real samples from fake samples. 
 
-![](notes/imgs/gan-detailed-architecture.png)
+![](generative_adverserial_networks/notes/imgs/gan-detailed-architecture.png)
 
 During the training, we will try to minimise the error of the generator while maximising the error of the discriminator. The discriminator will have the most difficulty to predict the class when the two distributions will be equal in all points: in this case, for each point there are equal chances for it to be “true” or “generated” and then the discriminator can’t do better than being true in one case out of two in average.
 
