@@ -8,6 +8,6 @@
 
 - [Generative models](generative_models/): Presentation of different kind of generative models (GANs, VAEs, ..)
 
-  - [Variational Auto Encoders](generative_models/variational_auto_encoders.md) Explaination of how they work and how to implement them in Pytorch (see [notebook](generative_models/variational_auto_encoders.ipynb)).
+  - [Variational Auto Encoders](generative_models/variational_auto_encoders/): Explaination of how they work and how to implement them in Pytorch.
 
 
